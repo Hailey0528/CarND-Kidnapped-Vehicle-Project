@@ -116,15 +116,65 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
 
-  //transform the vehicle's coordinates to MAP's coordinates
 
   for (int i = 0; i < num_particles; i++){
+    // create the vector for saving the landmarks in the range
+    double x = particles[i].x;
+    double y = particles[i].y;
+    double theta = particles[i].theta;
+
+    vector<LandmarkObs> Landmarks_inRange;
     // find the landmarks in the range
     for (int j = 0; j < map_landmarks.landmark_list.size(); j++){
-      delta_x = particles[i].x - map_landmarks.landmark_list[j].x_f;
-      delta_y = particles[i].y - map_landmarks.landmark_list[j].y_f;
+      delta_x = x - map_landmarks.landmark_list[j].x_f;
+      delta_y = y - map_landmarks.landmark_list[j].y_f;
       if (delta_x * delta_x + delta_y * delta_y <= sensor_range * sensor_range){
-}}}
+        Landmarks_inRange.push_back(LandmarkObs{map_landmarks.landmark_list[j].id_i, map_landmarks.landmark_list[j].x_f, map_landmarks.landmark_list[j].y_f);
+      }
+    }
+
+    //transform the vehicle's coordinates to MAP's coordinates
+    vector<LandmarkObs> Observation_MAP;
+    for (int j = 0; j < observations.size(); j++){
+      xm = x + cos(theta) * observation[j].x - sin(theta) * observation[j].y;
+      ym = y + sin(theta) * observation[j].x + cos(theta) * observation[j].y;
+      Observation_MAP.push_back(LandmarkObs{observations[j].id, xm, ym);
+    }
+    
+    //observation association to landmark
+    dataAssociation(Landmarks_inRange, Observation_MAP);
+
+    //get the weight 
+    for (int j = 0; j < Observation_MAP.size(); j++){
+      double Map_x = Observation_MAP[j].x;
+      double Map_y = Observation_MAP[j].y;
+
+      int id = Observation_MAP[j].id;
+      int m = 0;
+      bool F_landmark = false;
+
+      // find the landmark that has this id
+      while(!F_landmark && m < Landmarks_inRange.size()){
+        if (Landmarks_inRange[m].id == id){
+          F_landmark = true;
+          double landmark_nearest_x = Landmarks_inRange[m].x;
+          double landmark_nearest_y = Landmarks_inRange[m].y;
+        }
+        k++;
+      }
+
+      //calculating the weight
+      double delta_x = Map_x - landmark_nearest_x;
+      double delta_y = Map_y - landmark_nearest_y;
+
+      double sig_x = std_landmark[0];
+      double sig_y = std_landmark[1];
+      gauss_norm = (1/(2 * M_PI * sig_x * sig_y))
+      // calculate exponent
+      exponent = delta_x * delta_x /(2 * sig_x * sig_x) + delta_y * delta_y /(2 * sig_y * sig_y);
+      particles[i].weight *= gauss_norm * exp(-exponent);
+    }
+  }
 }
 
 void ParticleFilter::resample() {
