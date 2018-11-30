@@ -126,14 +126,13 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     double theta = particles[i].theta;
 
     vector<LandmarkObs> Landmarks_inRange;
-    // find the landmarks in the range
+    // find the landmarks in the sensor range to the particle
     for (int j = 0; j < map_landmarks.landmark_list.size(); j++){
-      int id = ;
       double x_landmarks = map_landmarks.landmark_list[j].x_f;
       double y_landmarks = map_landmarks.landmark_list[j].y_f;
-      double delta_x = x - x_landmarks;
-      double delta_y = y - y_landmarks;
-      if (delta_x * delta_x + delta_y * delta_y <= sensor_range * sensor_range){
+      double dis = dist(x_landmarks, y_landmarks, x, y);
+      // if the distance of the jth landmark to the ith particle is in the sensor range, then save this landmark's information
+      if (dis <= sensor_range){
         Landmarks_inRange.push_back(LandmarkObs{map_landmarks.landmark_list[j].id_x, x_landmarks, y_landmarks});
       }
     }
@@ -146,7 +145,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       Observation_MAP.push_back(LandmarkObs{observations[j].id, xm, ym});
     }
     
-    //observation association to landmark
+    //for each observation get the nearest landmark and save the id
     dataAssociation(Landmarks_inRange, Observation_MAP);
 
     particles[i].weight = 1.0;
