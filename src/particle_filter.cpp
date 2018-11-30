@@ -18,6 +18,7 @@
 #include "particle_filter.h"
 
 using namespace std;
+static default_random_engine gen;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
@@ -27,18 +28,16 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
   // set the number of particles
   num_particles = 50;
 
-  default_random_engine gen;
-
   // creates a normal (Gaussian) distribution for x, y and theta
-  normal_distribution<double> dist_x(0, std[0]);
-  normal_distribution<double> dist_y(0, std[1]);
-  normal_distribution<double> dist_theta(0, std[2]);
+  normal_distribution<double> dist_x(x, std[0]);
+  normal_distribution<double> dist_y(y, std[1]);
+  normal_distribution<double> dist_theta(theta, std[2]);
 
   for (int i = 0; i < num_particles; i++){
     Particle par;
-    par.x = x + dist_x(gen);
-    par.y = y + dist_y(gen);
-    par.theta = theta + dist_theta(gen);
+    par.x = dist_x(gen);
+    par.y = dist_y(gen);
+    par.theta = dist_theta(gen);
     par.weight = 1.0;
     par.id = i;
 
@@ -63,14 +62,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   normal_distribution<double> dist_theta(0, std_pos[2]);
 
   for (int i = 0; i < num_particles; i ++){
+	  
+    double theta = particles[i].theta;
+	  
     if (fabs(yaw_rate) > 0.0001){
-      particles[i].x += velocity / yaw_rate * (sin(particles[i].theta + yaw_rate*delta_t) - sin(particles[i].theta));
-      particles[i].y += velocity / yaw_rate * (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate*delta_t));
+      particles[i].x += velocity / yaw_rate * (sin(theta + yaw_rate*delta_t) - sin(theta));
+      particles[i].y += velocity / yaw_rate * (cos(theta) - cos(theta + yaw_rate*delta_t));
       particles[i].theta += yaw_rate*delta_t;
     }
     else{
-      particles[i].x += velocity * cos(particles[i].theta) *delta_t;
-      particles[i].y += velocity * sin(particles[i].theta) *delta_t;
+      particles[i].x += velocity * cos(theta) *delta_t;
+      particles[i].y += velocity * sin(theta) *delta_t;
     }
   
     //adding the gaussian noise
